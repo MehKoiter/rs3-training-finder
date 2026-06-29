@@ -41,85 +41,38 @@
       padding: 1.25rem 1.5rem; display: flex; align-items: center; gap: 12px;
       position: sticky; top: 0; z-index: 10;
     }
-    .logo {
-      width: 36px; height: 36px; background: var(--accent);
-      border-radius: var(--radius); display: flex; align-items: center;
-      justify-content: center; font-size: 20px; flex-shrink: 0;
-    }
+    .logo { width: 36px; height: 36px; background: var(--accent); border-radius: var(--radius); display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; }
     header h1 { font-size: 17px; font-weight: 600; letter-spacing: -.01em; }
     header p { font-size: 13px; color: var(--text-secondary); }
-    .wiki-badge {
-      margin-left: auto; font-size: 11px; color: var(--text-muted);
-      display: flex; align-items: center; gap: 5px; flex-shrink: 0;
-    }
+    .wiki-badge { margin-left: auto; font-size: 11px; color: var(--text-muted); display: flex; align-items: center; gap: 5px; flex-shrink: 0; }
     .wiki-badge a { color: var(--accent-text); text-decoration: none; }
     .wiki-badge a:hover { text-decoration: underline; }
     .container { max-width: 720px; margin: 0 auto; padding: 1.5rem 1rem; }
-    .card {
-      background: var(--surface); border: 1px solid var(--border);
-      border-radius: 12px; padding: 1.25rem; margin-bottom: 1rem;
-      box-shadow: var(--shadow);
-    }
-    .card-title {
-      font-size: 11px; font-weight: 600; color: var(--text-muted);
-      text-transform: uppercase; letter-spacing: .07em; margin-bottom: 1rem;
-    }
+    .card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 1.25rem; margin-bottom: 1rem; box-shadow: var(--shadow); }
+    .card-title { font-size: 11px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: .07em; margin-bottom: 1rem; }
     .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
     .grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
     @media (max-width: 500px) { .grid3 { grid-template-columns: 1fr 1fr; } }
-    .field label {
-      display: block; font-size: 12px; color: var(--text-secondary);
-      font-weight: 500; margin-bottom: 5px;
-    }
-    input[type=number], select {
-      width: 100%; height: 38px; padding: 0 10px;
-      border-radius: var(--radius); border: 1px solid var(--border-strong);
-      background: var(--surface-2); color: var(--text); font-size: 14px;
-      font-family: inherit; transition: border-color .15s; -webkit-appearance: none;
-    }
-    input[type=number]:focus, select:focus {
-      outline: none; border-color: var(--accent);
-      box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 15%, transparent);
-    }
+    .field label { display: block; font-size: 12px; color: var(--text-secondary); font-weight: 500; margin-bottom: 5px; }
+    input[type=number], select { width: 100%; height: 38px; padding: 0 10px; border-radius: var(--radius); border: 1px solid var(--border-strong); background: var(--surface-2); color: var(--text); font-size: 14px; font-family: inherit; transition: border-color .15s; -webkit-appearance: none; }
+    input[type=number]:focus, select:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 15%, transparent); }
     .divider { height: 1px; background: var(--border); margin: 1rem 0; }
     .btn-group { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
-    .btn-toggle {
-      padding: 6px 14px; border-radius: 20px; border: 1px solid var(--border-strong);
-      background: var(--surface-2); color: var(--text-secondary); font-size: 13px;
-      font-family: inherit; cursor: pointer; transition: all .15s; white-space: nowrap;
-    }
+    .btn-toggle { padding: 6px 14px; border-radius: 20px; border: 1px solid var(--border-strong); background: var(--surface-2); color: var(--text-secondary); font-size: 13px; font-family: inherit; cursor: pointer; transition: all .15s; white-space: nowrap; }
     .btn-toggle:hover { border-color: var(--accent); color: var(--accent); }
     .btn-toggle.active { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 500; }
-    .find-btn {
-      width: 100%; height: 44px; border-radius: var(--radius); border: none;
-      background: var(--accent); color: #fff; font-size: 15px; font-weight: 600;
-      font-family: inherit; cursor: pointer; margin-top: .5rem;
-      transition: opacity .15s, transform .1s;
-      display: flex; align-items: center; justify-content: center; gap: 8px;
-    }
+    .find-btn { width: 100%; height: 44px; border-radius: var(--radius); border: none; background: var(--accent); color: #fff; font-size: 15px; font-weight: 600; font-family: inherit; cursor: pointer; margin-top: .5rem; transition: opacity .15s, transform .1s; display: flex; align-items: center; justify-content: center; gap: 8px; }
     .find-btn:hover { opacity: .9; }
     .find-btn:active { transform: scale(.99); }
     .find-btn:disabled { opacity: .5; cursor: not-allowed; transform: none; }
-    .spinner {
-      width: 16px; height: 16px; border: 2px solid rgba(255,255,255,.4);
-      border-top-color: #fff; border-radius: 50%;
-      animation: spin .7s linear infinite; display: none;
-    }
+    .spinner { width: 16px; height: 16px; border: 2px solid rgba(255,255,255,.4); border-top-color: #fff; border-radius: 50%; animation: spin .7s linear infinite; display: none; }
     @keyframes spin { to { transform: rotate(360deg); } }
-    .status-bar {
-      font-size: 12px; color: var(--text-muted); padding: .5rem 0;
-      display: flex; align-items: center; gap: 6px; min-height: 28px;
-    }
+    .status-bar { font-size: 12px; color: var(--text-muted); padding: .5rem 0; display: flex; align-items: center; gap: 6px; min-height: 28px; }
     .status-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--text-muted); flex-shrink: 0; }
     .status-dot.live { background: #2a6b3c; animation: pulse 2s infinite; }
     @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .4; } }
     .results-header { font-size: 13px; color: var(--text-muted); margin-bottom: .75rem; }
-    .enemy-card {
-      background: var(--surface); border: 1px solid var(--border);
-      border-radius: 12px; padding: 1rem 1.25rem; margin-bottom: .75rem;
-      display: grid; grid-template-columns: 1fr auto; gap: 14px;
-      box-shadow: var(--shadow); transition: border-color .15s;
-    }
+    .enemy-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 1rem 1.25rem; margin-bottom: .75rem; display: grid; grid-template-columns: 1fr auto; gap: 14px; box-shadow: var(--shadow); transition: border-color .15s; }
     .enemy-card:hover { border-color: var(--border-strong); }
     .enemy-name { font-size: 15px; font-weight: 600; margin-bottom: 2px; }
     .enemy-name a { color: inherit; text-decoration: none; }
@@ -137,10 +90,7 @@
     .stat-label { font-size: 10px; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: .05em; }
     .stat-val { font-size: 13px; font-weight: 500; }
     .wpill { display: inline-block; padding: 1px 7px; border-radius: 4px; font-size: 11px; font-weight: 600; }
-    .error-box {
-      background: var(--red-bg); border: 1px solid var(--red-text);
-      border-radius: var(--radius); padding: 1rem; color: var(--red-text); font-size: 13px;
-    }
+    .error-box { background: var(--red-bg); border: 1px solid var(--red-text); border-radius: var(--radius); padding: 1rem; color: var(--red-text); font-size: 13px; }
     .empty-state { text-align: center; padding: 3rem 1rem; color: var(--text-muted); }
     .empty-state i { font-size: 40px; display: block; margin-bottom: .75rem; opacity: .5; }
     .empty-state p { font-size: 14px; }
@@ -183,7 +133,6 @@
 
   <div class="card">
     <div class="card-title">Filters</div>
-
     <div style="margin-bottom:1rem">
       <div class="field" style="margin-bottom:6px"><label>Combat style (filters by weakness)</label></div>
       <div class="btn-group" id="style-group">
@@ -193,16 +142,14 @@
         <button class="btn-toggle" data-val="magic">&#127358; Magic</button>
       </div>
     </div>
-
     <div style="margin-bottom:1rem">
       <div class="field" style="margin-bottom:6px"><label>Membership</label></div>
       <div class="btn-group" id="members-group">
         <button class="btn-toggle active" data-val="any">Both</button>
-        <button class="btn-toggle" data-val="Yes">Members only</button>
-        <button class="btn-toggle" data-val="No">F2P only</button>
+        <button class="btn-toggle" data-val="members">Members only</button>
+        <button class="btn-toggle" data-val="f2p">F2P only</button>
       </div>
     </div>
-
     <div class="grid2">
       <div class="field"><label>Enemy combat level — min</label><input type="number" id="minlvl" value="1" min="1" max="10000"></div>
       <div class="field"><label>Enemy combat level — max</label><input type="number" id="maxlvl" value="200" min="1" max="10000"></div>
@@ -241,7 +188,6 @@
       });
     });
   }
-
   bindGroup('style-group',   function(v) { combatStyle   = v; });
   bindGroup('members-group', function(v) { membersFilter = v; });
 
@@ -288,14 +234,13 @@
   function findEnemies() {
     var minLvl = parseInt(document.getElementById('minlvl').value) || 1;
     var maxLvl = parseInt(document.getElementById('maxlvl').value) || 200;
-
     if (minLvl > maxLvl) { setStatus('Min level must be less than max level', false); return; }
 
     setLoading(true);
     setStatus('Querying the RS3 Wiki...', false);
     document.getElementById('results').innerHTML = '';
 
-    queryWikiCargo(minLvl, maxLvl).then(function(monsters) {
+    queryWikiSMW(minLvl, maxLvl).then(function(monsters) {
       renderResults(monsters);
     }).catch(function(err) {
       document.getElementById('results').innerHTML =
@@ -306,42 +251,98 @@
     });
   }
 
-  function queryWikiCargo(minLvl, maxLvl) {
-    var conditions = [
-      'combat BETWEEN ' + minLvl + ' AND ' + maxLvl,
-      'combat > 0',
-      'lifepoints > 0'
-    ];
-    if (membersFilter !== 'any') conditions.push("members = '" + membersFilter + "'");
+  function queryWikiSMW(minLvl, maxLvl) {
+    // SMW ask query — RS3 wiki uses Semantic MediaWiki (action=ask), not Cargo
+    // Query monsters within the combat level range with the properties we need
+    var smwQuery = '[[Category:Monsters]]' +
+      '[[Combat level::>=' + minLvl + ']]' +
+      '[[Combat level::<=' + maxLvl + ']]' +
+      '|?Combat level' +
+      '|?Weakness' +
+      '|?Slayer level' +
+      '|?Location' +
+      '|?Is members only' +
+      '|?Is aggressive' +
+      '|?Is poisonous' +
+      '|?Life points' +
+      '|?Experience' +
+      '|limit=500' +
+      '|offset=0';
 
-    var params = new URLSearchParams({
-      action:   'cargoquery',
-      tables:   'Monsters',
-      fields:   '_pageName=page,name,combat,weakness,slaylvl,slayxp,location,members,aggressive,poisonous,lifepoints,experience',
-      where:    conditions.join(' AND '),
-      order_by: 'combat ASC',
-      limit:    '500',
-      format:   'json',
-      origin:   '*'
-    });
+    var url = 'https://runescape.wiki/api.php?action=ask&format=json&origin=*&query=' + encodeURIComponent(smwQuery);
 
-    return fetch('https://runescape.wiki/api.php?' + params.toString(), {
-      headers: { 'User-Agent': 'rs3-training-finder/1.0 (fansite tool)' }
-    }).then(function(res) {
+    return fetch(url).then(function(res) {
       if (!res.ok) throw new Error('HTTP ' + res.status);
       return res.json();
     }).then(function(data) {
-      if (data.error) throw new Error(data.error.info || 'Wiki API error');
-      return (data.cargoquery || []).map(function(r) { return r.title; });
+      if (data.error) throw new Error(data.error.info || JSON.stringify(data.error));
+      var results = data.query && data.query.results ? data.query.results : {};
+      return parseSMWResults(results);
     });
   }
 
-  function renderResults(raw) {
-    var monsters = raw.filter(function(m) { return styleMatchesWeakness(m.weakness, combatStyle); });
+  function getVal(printout) {
+    if (!printout || !printout.length) return '';
+    var v = printout[0];
+    if (typeof v === 'string') return v;
+    if (typeof v === 'number') return v;
+    if (v && typeof v === 'object') {
+      if (v.fulltext) return v.fulltext;
+      if (v.item) return v.item;
+    }
+    return String(v);
+  }
 
+  function parseSMWResults(results) {
+    var monsters = [];
+    for (var page in results) {
+      if (!results.hasOwnProperty(page)) continue;
+      var r = results[page];
+      var po = r.printouts || {};
+      monsters.push({
+        name:       r.displaytitle || page.replace(/_/g, ' '),
+        page:       page,
+        combat:     getVal(po['Combat level']),
+        weakness:   getVal(po['Weakness']),
+        slaylvl:    getVal(po['Slayer level']),
+        location:   getVal(po['Location']),
+        members:    getVal(po['Is members only']),
+        aggressive: getVal(po['Is aggressive']),
+        poisonous:  getVal(po['Is poisonous']),
+        lifepoints: getVal(po['Life points']),
+        experience: getVal(po['Experience'])
+      });
+    }
+    // Sort by combat level ascending
+    monsters.sort(function(a, b) {
+      return (parseInt(a.combat) || 0) - (parseInt(b.combat) || 0);
+    });
+    return monsters;
+  }
+
+  function renderResults(raw) {
+    // Filter by style preference
+    var monsters = raw.filter(function(m) {
+      return styleMatchesWeakness(m.weakness, combatStyle);
+    });
+
+    // Filter by membership
+    if (membersFilter === 'members') {
+      monsters = monsters.filter(function(m) {
+        var v = (m.members || '').toLowerCase();
+        return v === 'yes' || v === 'true' || v === '1';
+      });
+    } else if (membersFilter === 'f2p') {
+      monsters = monsters.filter(function(m) {
+        var v = (m.members || '').toLowerCase();
+        return v === 'no' || v === 'false' || v === '0' || v === '';
+      });
+    }
+
+    // Dedupe by name
     var seen = {};
     monsters = monsters.filter(function(m) {
-      var key = (m.name || m.page || '').toLowerCase().trim();
+      var key = (m.name || '').toLowerCase().trim();
       if (seen[key]) return false;
       seen[key] = true;
       return true;
@@ -360,7 +361,7 @@
 
     div.innerHTML = '<p class="results-header">Showing ' + shown.length + ' of ' + monsters.length + ' monsters, sorted by combat level</p>' +
       shown.map(function(m) {
-        var name    = m.name || m.page || 'Unknown';
+        var name    = m.name || 'Unknown';
         var page    = m.page || name;
         var wikiUrl = 'https://runescape.wiki/w/' + encodeURIComponent(page.replace(/ /g, '_'));
         var combat  = m.combat || '?';
@@ -370,12 +371,16 @@
         var loc     = (m.location || 'Unknown location').split(',')[0].trim();
         var slayLvl = m.slaylvl && m.slaylvl !== '0' ? m.slaylvl : null;
 
+        var isMember = (m.members || '').toLowerCase();
+        var isAggro  = (m.aggressive || '').toLowerCase();
+        var isPoison = (m.poisonous || '').toLowerCase();
+
         var tags = [];
-        if (m.members    === 'Yes') tags.push({ text: 'Members',    cls: 'tag-blue' });
-        else                        tags.push({ text: 'F2P',        cls: 'tag-green' });
-        if (m.aggressive === 'Yes') tags.push({ text: 'Aggressive', cls: 'tag-red' });
-        if (m.poisonous  === 'Yes') tags.push({ text: 'Poisonous',  cls: 'tag-amber' });
-        if (slayLvl)                tags.push({ text: 'Slayer ' + slayLvl + '+', cls: 'tag-accent' });
+        if (isMember === 'yes' || isMember === 'true') tags.push({ text: 'Members', cls: 'tag-blue' });
+        else tags.push({ text: 'F2P', cls: 'tag-green' });
+        if (isAggro  === 'yes' || isAggro  === 'true') tags.push({ text: 'Aggressive', cls: 'tag-red' });
+        if (isPoison === 'yes' || isPoison === 'true') tags.push({ text: 'Poisonous',  cls: 'tag-amber' });
+        if (slayLvl) tags.push({ text: 'Slayer ' + slayLvl + '+', cls: 'tag-accent' });
 
         var tagHtml = tags.map(function(t) { return '<span class="tag ' + t.cls + '">' + t.text + '</span>'; }).join('');
 
