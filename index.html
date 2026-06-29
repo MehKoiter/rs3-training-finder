@@ -240,7 +240,7 @@
     setStatus('Querying the RS3 Wiki...', false);
     document.getElementById('results').innerHTML = '';
 
-    queryWikiSMW(minLvl, maxLvl).then(function(monsters) {
+    queryWikiCargo(minLvl, maxLvl).then(function(monsters) {
       renderResults(monsters);
     }).catch(function(err) {
       document.getElementById('results').innerHTML =
@@ -251,69 +251,65 @@
     });
   }
 
-  function queryWikiSMW(minLvl, maxLvl) {
-    // SMW ask query — RS3 wiki uses Semantic MediaWiki (action=ask), not Cargo
-    // Query monsters within the combat level range with the properties we need
-    var smwQuery = '[[Category:Monsters]]' +
-      '[[Combat level::>=' + minLvl + ']]' +
-      '[[Combat level::<=' + maxLvl + ']]' +
-      '|?Combat level' +
-      '|?Weakness' +
-      '|?Slayer level' +
-      '|?Location' +
-      '|?Is members only' +
-      '|?Is aggressive' +
-      '|?Is poisonous' +
-      '|?Life points' +
-      '|?Experience' +
-      '|limit=500' +
-      '|offset=0';
+  function queryWikiCargo(minLvl, maxLvl) {
+    // RS3 wiki uses Cargo (action=cargoquery), not Semantic MediaWiki
+    var fields = [
+      'Monsters._pageName=page',
+      'Monsters.name',
+      'Monsters.combat',
+      'Monsters.weakness',
+      'Monsters.slaylvl',
+      'Monsters.location',
+      'Monsters.members',
+      'Monsters.aggressive',
+      'Monsters.poisonous',
+      'Monsters.lifepoints',
+      'Monsters.xpbonus=experience'
+    ].join(',');
 
-    var url = 'https://runescape.wiki/api.php?action=ask&format=json&origin=*&query=' + encodeURIComponent(smwQuery);
+    var where = 'Monsters.combat>=' + minLvl + ' AND Monsters.combat<=' + maxLvl;
+
+    var params = new URLSearchParams({
+      action: 'cargoquery',
+      format: 'json',
+      origin: '*',
+      tables: 'Monsters',
+      fields: fields,
+      where: where,
+      limit: '500',
+      offset: '0'
+    });
+
+    var url = 'https://runescape.wiki/api.php?' + params.toString();
 
     return fetch(url).then(function(res) {
       if (!res.ok) throw new Error('HTTP ' + res.status);
       return res.json();
     }).then(function(data) {
       if (data.error) throw new Error(data.error.info || JSON.stringify(data.error));
-      var results = data.query && data.query.results ? data.query.results : {};
-      return parseSMWResults(results);
+      var rows = data.cargoquery || [];
+      return parseCargoResults(rows);
     });
   }
 
-  function getVal(printout) {
-    if (!printout || !printout.length) return '';
-    var v = printout[0];
-    if (typeof v === 'string') return v;
-    if (typeof v === 'number') return v;
-    if (v && typeof v === 'object') {
-      if (v.fulltext) return v.fulltext;
-      if (v.item) return v.item;
-    }
-    return String(v);
-  }
-
-  function parseSMWResults(results) {
+  function parseCargoResults(rows) {
     var monsters = [];
-    for (var page in results) {
-      if (!results.hasOwnProperty(page)) continue;
-      var r = results[page];
-      var po = r.printouts || {};
+    rows.forEach(function(row) {
+      var r = row.title || {};
       monsters.push({
-        name:       r.displaytitle || page.replace(/_/g, ' '),
-        page:       page,
-        combat:     getVal(po['Combat level']),
-        weakness:   getVal(po['Weakness']),
-        slaylvl:    getVal(po['Slayer level']),
-        location:   getVal(po['Location']),
-        members:    getVal(po['Is members only']),
-        aggressive: getVal(po['Is aggressive']),
-        poisonous:  getVal(po['Is poisonous']),
-        lifepoints: getVal(po['Life points']),
-        experience: getVal(po['Experience'])
+        name:       r.name || (r.page || '').replace(/_/g, ' '),
+        page:       r.page || '',
+        combat:     r.combat || '',
+        weakness:   r.weakness || '',
+        slaylvl:    r.slaylvl || '',
+        location:   r.location || '',
+        members:    r.members || '',
+        aggressive: r.aggressive || '',
+        poisonous:  r.poisonous || '',
+        lifepoints: r.lifepoints || '',
+        experience: r.experience || ''
       });
-    }
-    // Sort by combat level ascending
+    });
     monsters.sort(function(a, b) {
       return (parseInt(a.combat) || 0) - (parseInt(b.combat) || 0);
     });
