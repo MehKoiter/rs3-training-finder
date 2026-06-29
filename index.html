@@ -104,7 +104,7 @@
   <div class="logo">&#9876;</div>
   <div>
     <h1>RS3 Training Spot Finder</h1>
-    <p>Live monster data from the RS3 Wiki</p>
+    <p>Curated RS3 monster database</p>
   </div>
   <div class="wiki-badge">
     <i class="ti ti-book" style="font-size:14px" aria-hidden="true"></i>
@@ -158,7 +158,7 @@
 
   <button class="find-btn" id="find-btn" onclick="findEnemies()">
     <span class="spinner" id="spinner"></span>
-    <span id="btn-label">Search the wiki</span>
+    <span id="btn-label">Find training spots</span>
   </button>
 
   <div class="status-bar">
@@ -169,8 +169,7 @@
   <div id="results"></div>
 
   <footer>
-    Monster data sourced live from <a href="https://runescape.wiki" target="_blank" rel="noopener">runescape.wiki</a>
-    under <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/" target="_blank" rel="noopener">CC BY-NC-SA 3.0</a>.
+    Monster data derived from <a href="https://runescape.wiki" target="_blank" rel="noopener">runescape.wiki</a>.
     Not affiliated with Jagex.
   </footer>
 </div>
@@ -228,7 +227,7 @@
     var btn = document.getElementById('find-btn');
     btn.disabled = on;
     document.getElementById('spinner').style.display = on ? 'block' : 'none';
-    document.getElementById('btn-label').textContent = on ? 'Searching wiki...' : 'Search the wiki';
+    document.getElementById('btn-label').textContent = on ? 'Searching...' : 'Find training spots';
   }
 
   function findEnemies() {
@@ -237,83 +236,96 @@
     if (minLvl > maxLvl) { setStatus('Min level must be less than max level', false); return; }
 
     setLoading(true);
-    setStatus('Querying the RS3 Wiki...', false);
+    setStatus('Searching...', false);
     document.getElementById('results').innerHTML = '';
 
-    queryWikiCargo(minLvl, maxLvl).then(function(monsters) {
+    filterMonsters(minLvl, maxLvl).then(function(monsters) {
       renderResults(monsters);
-    }).catch(function(err) {
-      document.getElementById('results').innerHTML =
-        '<div class="error-box"><strong>Couldn\'t reach the RS3 Wiki.</strong><br>Check your internet connection and try again.<br><small style="opacity:.7;display:block;margin-top:4px">' + err.message + '</small></div>';
-      setStatus('Error — could not connect to the wiki', false);
     }).finally(function() {
       setLoading(false);
     });
   }
 
-  function queryWikiCargo(minLvl, maxLvl) {
-    // RS3 wiki uses Cargo (action=cargoquery), not Semantic MediaWiki
-    var fields = [
-      'Monsters._pageName=page',
-      'Monsters.name',
-      'Monsters.combat',
-      'Monsters.weakness',
-      'Monsters.slaylvl',
-      'Monsters.location',
-      'Monsters.members',
-      'Monsters.aggressive',
-      'Monsters.poisonous',
-      'Monsters.lifepoints',
-      'Monsters.xpbonus=experience'
-    ].join(',');
+  // XP per kill ≈ lifepoints × 0.4 (primary combat stat, approximate)
+  var MONSTERS = [
+    // ── F2P ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+    {name:'Rat',                    page:'Rat',                          combat:1,   weakness:'Slash',        slaylvl:'',   location:'Lumbridge',               members:'no',  aggressive:'no',  poisonous:'no',  lifepoints:100,   experience:40},
+    {name:'Chicken',                page:'Chicken',                      combat:3,   weakness:'Slash',        slaylvl:'',   location:'Lumbridge',               members:'no',  aggressive:'no',  poisonous:'no',  lifepoints:100,   experience:40},
+    {name:'Man',                    page:'Man',                          combat:2,   weakness:'Slash',        slaylvl:'',   location:'Lumbridge',               members:'no',  aggressive:'no',  poisonous:'no',  lifepoints:100,   experience:40},
+    {name:'Woman',                  page:'Woman',                        combat:2,   weakness:'Slash',        slaylvl:'',   location:'Lumbridge',               members:'no',  aggressive:'no',  poisonous:'no',  lifepoints:100,   experience:40},
+    {name:'Goblin',                 page:'Goblin',                       combat:2,   weakness:'Slash',        slaylvl:'',   location:'Lumbridge',               members:'no',  aggressive:'no',  poisonous:'no',  lifepoints:150,   experience:60},
+    {name:'Imp',                    page:'Imp',                          combat:7,   weakness:'Slash',        slaylvl:'',   location:'Karamja Volcano',         members:'no',  aggressive:'no',  poisonous:'no',  lifepoints:150,   experience:60},
+    {name:'Cow',                    page:'Cow',                          combat:8,   weakness:'Slash',        slaylvl:'',   location:'Lumbridge',               members:'no',  aggressive:'no',  poisonous:'no',  lifepoints:250,   experience:100},
+    {name:'Barbarian',              page:'Barbarian',                    combat:9,   weakness:'Slash',        slaylvl:'',   location:'Barbarian Village',       members:'no',  aggressive:'yes', poisonous:'no',  lifepoints:300,   experience:120},
+    {name:'Monk',                   page:'Monk',                         combat:13,  weakness:'Air spells',   slaylvl:'',   location:'Edgeville Monastery',     members:'no',  aggressive:'no',  poisonous:'no',  lifepoints:400,   experience:160},
+    {name:'Al Kharid warrior',      page:'Al_Kharid_warrior',            combat:18,  weakness:'Slash',        slaylvl:'',   location:'Al Kharid palace',        members:'no',  aggressive:'yes', poisonous:'no',  lifepoints:500,   experience:200},
+    {name:'Guard',                  page:'Guard',                        combat:22,  weakness:'Slash',        slaylvl:'',   location:'Falador',                 members:'no',  aggressive:'no',  poisonous:'no',  lifepoints:600,   experience:240},
+    {name:'Warrior woman',          page:'Warrior_woman',                combat:22,  weakness:'Slash',        slaylvl:'',   location:'Varrock',                 members:'no',  aggressive:'no',  poisonous:'no',  lifepoints:600,   experience:240},
+    {name:'Hobgoblin',              page:'Hobgoblin',                    combat:28,  weakness:'Slash',        slaylvl:'',   location:'Edgeville Dungeon',       members:'no',  aggressive:'no',  poisonous:'no',  lifepoints:700,   experience:280},
+    {name:'Hill Giant',             page:'Hill_Giant',                   combat:28,  weakness:'Crush',        slaylvl:'',   location:'Edgeville Dungeon',       members:'no',  aggressive:'yes', poisonous:'no',  lifepoints:1100,  experience:440},
+    {name:'Deadly red spider',      page:'Deadly_red_spider',            combat:34,  weakness:'Slash',        slaylvl:'',   location:'Edgeville Dungeon',       members:'no',  aggressive:'yes', poisonous:'no',  lifepoints:650,   experience:260},
+    {name:'Flesh Crawler',          page:'Flesh_Crawler',                combat:35,  weakness:'Slash',        slaylvl:'',   location:'Stronghold of Security',  members:'no',  aggressive:'yes', poisonous:'no',  lifepoints:950,   experience:380},
+    {name:'Moss Giant',             page:'Moss_Giant',                   combat:42,  weakness:'Slash',        slaylvl:'',   location:'Varrock Sewers',          members:'no',  aggressive:'yes', poisonous:'no',  lifepoints:1900,  experience:760},
+    {name:'Ice Giant',              page:'Ice_Giant',                    combat:53,  weakness:'Fire spells',  slaylvl:'',   location:'White Wolf Mountain',     members:'no',  aggressive:'yes', poisonous:'no',  lifepoints:2200,  experience:880},
+    {name:'Ice Warrior',            page:'Ice_Warrior',                  combat:57,  weakness:'Fire spells',  slaylvl:'',   location:'White Wolf Mountain',     members:'no',  aggressive:'yes', poisonous:'no',  lifepoints:2500,  experience:1000},
+    {name:'Lesser Demon',           page:'Lesser_Demon',                 combat:82,  weakness:'Water spells', slaylvl:'',   location:'Karamja Volcano',         members:'no',  aggressive:'yes', poisonous:'no',  lifepoints:3200,  experience:1280},
+    {name:'Cockroach Soldier',      page:'Cockroach_soldier',            combat:83,  weakness:'Slash',        slaylvl:'',   location:'Stronghold of Security',  members:'no',  aggressive:'yes', poisonous:'no',  lifepoints:4000,  experience:1600},
+    // ── Members ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+    {name:'Cave Bug',               page:'Cave_bug',                     combat:6,   weakness:'Slash',        slaylvl:'7',  location:'Lumbridge Swamp Caves',   members:'yes', aggressive:'no',  poisonous:'yes', lifepoints:150,   experience:60},
+    {name:'Rock Crab',              page:'Rock_Crab',                    combat:13,  weakness:'Crush',        slaylvl:'',   location:'Rellekka coast',          members:'yes', aggressive:'yes', poisonous:'no',  lifepoints:500,   experience:200},
+    {name:'Dark Warrior',           page:'Dark_warrior',                 combat:16,  weakness:'Slash',        slaylvl:'',   location:'Dark Warriors Fortress',  members:'yes', aggressive:'yes', poisonous:'no',  lifepoints:400,   experience:160},
+    {name:'Cave Crawler',           page:'Cave_crawler',                 combat:23,  weakness:'Slash',        slaylvl:'10', location:'Lumbridge Swamp Caves',   members:'yes', aggressive:'yes', poisonous:'yes', lifepoints:600,   experience:240},
+    {name:'Cave Slime',             page:'Cave_slime',                   combat:23,  weakness:'Slash',        slaylvl:'17', location:'Lumbridge Swamp Caves',   members:'yes', aggressive:'yes', poisonous:'yes', lifepoints:550,   experience:220},
+    {name:'Kalphite Worker',        page:'Kalphite_Worker',              combat:28,  weakness:'Magic',        slaylvl:'',   location:'Kalphite Cave',           members:'yes', aggressive:'yes', poisonous:'yes', lifepoints:700,   experience:280},
+    {name:'Black Knight',           page:'Black_Knight',                 combat:33,  weakness:'Slash',        slaylvl:'',   location:'Taverley Dungeon',        members:'yes', aggressive:'yes', poisonous:'no',  lifepoints:800,   experience:320},
+    {name:'Pyrefiend',              page:'Pyrefiend',                    combat:44,  weakness:'Water spells', slaylvl:'30', location:'Smoke Dungeon',           members:'yes', aggressive:'yes', poisonous:'no',  lifepoints:1200,  experience:480},
+    {name:'Fever Spider',           page:'Fever_spider',                 combat:49,  weakness:'Slash',        slaylvl:'42', location:'Braindeath Island',       members:'yes', aggressive:'yes', poisonous:'no',  lifepoints:1500,  experience:600},
+    {name:'Experiment',             page:'Experiment_(monster)',          combat:51,  weakness:'Slash',        slaylvl:'',   location:'Experiments Cave',        members:'yes', aggressive:'yes', poisonous:'no',  lifepoints:2000,  experience:800},
+    {name:'Molanisk',               page:'Molanisk',                     combat:51,  weakness:'Slash',        slaylvl:'39', location:'Zanaris',                 members:'yes', aggressive:'no',  poisonous:'no',  lifepoints:1600,  experience:640},
+    {name:'Grotworm',               page:'Grotworm',                     combat:51,  weakness:'Slash',        slaylvl:'',   location:'White Knight Catacombs',  members:'yes', aggressive:'yes', poisonous:'yes', lifepoints:2500,  experience:1000},
+    {name:'Jogre',                  page:'Jogre',                        combat:57,  weakness:'Slash',        slaylvl:'',   location:'Karamja',                 members:'yes', aggressive:'yes', poisonous:'no',  lifepoints:2000,  experience:800},
+    {name:'Bandit',                 page:'Bandit_(Kharidian_Desert)',     combat:57,  weakness:'Slash',        slaylvl:'',   location:'Bandit Camp',             members:'yes', aggressive:'yes', poisonous:'no',  lifepoints:2000,  experience:800},
+    {name:'Basilisk',               page:'Basilisk',                     combat:61,  weakness:'Slash',        slaylvl:'40', location:'Fremennik Slayer Dungeon',members:'yes', aggressive:'yes', poisonous:'no',  lifepoints:2200,  experience:880},
+    {name:'Green Dragon',           page:'Green_dragon',                 combat:63,  weakness:'Slash',        slaylvl:'',   location:'Wilderness',              members:'yes', aggressive:'yes', poisonous:'no',  lifepoints:3000,  experience:1200},
+    {name:'Jungle Horror',          page:'Jungle_horror',                combat:70,  weakness:'Slash',        slaylvl:'',   location:'Mos Le\'Harmless',        members:'yes', aggressive:'yes', poisonous:'yes', lifepoints:2500,  experience:1000},
+    {name:'Mutated Zygomite',       page:'Mutated_Zygomite',             combat:74,  weakness:'Slash',        slaylvl:'57', location:'Zanaris',                 members:'yes', aggressive:'yes', poisonous:'no',  lifepoints:2800,  experience:1120},
+    {name:'Jelly',                  page:'Jelly',                        combat:78,  weakness:'Slash',        slaylvl:'52', location:'Fremennik Slayer Dungeon',members:'yes', aggressive:'yes', poisonous:'no',  lifepoints:3000,  experience:1200},
+    {name:'Cave Horror',            page:'Cave_horror',                  combat:78,  weakness:'Slash',        slaylvl:'58', location:'Mos Le\'Harmless',        members:'yes', aggressive:'yes', poisonous:'no',  lifepoints:3000,  experience:1200},
+    {name:'Mature Grotworm',        page:'Mature_grotworm',              combat:80,  weakness:'Slash',        slaylvl:'',   location:'White Knight Catacombs',  members:'yes', aggressive:'yes', poisonous:'yes', lifepoints:4500,  experience:1800},
+    {name:'Turoth',                 page:'Turoth',                       combat:83,  weakness:'Slash',        slaylvl:'55', location:'Fremennik Slayer Dungeon',members:'yes', aggressive:'yes', poisonous:'no',  lifepoints:3400,  experience:1360},
+    {name:'Infernal Mage',          page:'Infernal_Mage',                combat:83,  weakness:'Water spells', slaylvl:'45', location:'Slayer Tower',            members:'yes', aggressive:'yes', poisonous:'no',  lifepoints:3200,  experience:1280},
+    {name:'Armoured Zombie',        page:'Armoured_Zombie',              combat:85,  weakness:'Slash',        slaylvl:'',   location:'Draynor Sewers',          members:'yes', aggressive:'no',  poisonous:'no',  lifepoints:3500,  experience:1400},
+    {name:'Kalphite Soldier',       page:'Kalphite_Soldier',             combat:85,  weakness:'Magic',        slaylvl:'',   location:'Kalphite Cave',           members:'yes', aggressive:'yes', poisonous:'yes', lifepoints:3500,  experience:1400},
+    {name:'Fire Giant',             page:'Fire_Giant',                   combat:86,  weakness:'Water spells', slaylvl:'',   location:'Waterfall Dungeon',       members:'yes', aggressive:'yes', poisonous:'no',  lifepoints:5150,  experience:2060},
+    {name:'Werewolf',               page:'Werewolf',                     combat:88,  weakness:'Slash',        slaylvl:'',   location:'Canifis',                 members:'yes', aggressive:'yes', poisonous:'no',  lifepoints:4000,  experience:1600},
+    {name:'Dagannoth',              page:'Dagannoth',                    combat:90,  weakness:'Slash',        slaylvl:'',   location:'Waterbirth Island',       members:'yes', aggressive:'yes', poisonous:'no',  lifepoints:4200,  experience:1680},
+    {name:'Greater Demon',          page:'Greater_Demon',                combat:92,  weakness:'Water spells', slaylvl:'',   location:'Demonic Ruins',           members:'yes', aggressive:'yes', poisonous:'no',  lifepoints:5000,  experience:2000},
+    {name:'Abyssal Demon',          page:'Abyssal_demon',                combat:98,  weakness:'Slash',        slaylvl:'85', location:'Slayer Tower',            members:'yes', aggressive:'no',  poisonous:'no',  lifepoints:8500,  experience:3400},
+    {name:'Kurask',                 page:'Kurask',                       combat:106, weakness:'Bolt',         slaylvl:'70', location:'Fremennik Slayer Dungeon',members:'yes', aggressive:'no',  poisonous:'no',  lifepoints:5000,  experience:2000},
+    {name:'Blue Dragon',            page:'Blue_dragon',                  combat:111, weakness:'Slash',        slaylvl:'',   location:'Taverley Dungeon',        members:'yes', aggressive:'yes', poisonous:'no',  lifepoints:5500,  experience:2200},
+    {name:'Gargoyle',               page:'Gargoyle',                     combat:111, weakness:'Crush',        slaylvl:'75', location:'Slayer Tower',            members:'yes', aggressive:'no',  poisonous:'no',  lifepoints:6800,  experience:2720},
+    {name:'Glacor',                 page:'Glacor',                       combat:112, weakness:'Fire spells',  slaylvl:'',   location:'Glacor Cave',             members:'yes', aggressive:'yes', poisonous:'no',  lifepoints:10000, experience:4000},
+    {name:'Waterfiend',             page:'Waterfiend',                   combat:115, weakness:'Arrows',       slaylvl:'',   location:'Ancient Cavern',          members:'yes', aggressive:'yes', poisonous:'no',  lifepoints:5750,  experience:2300},
+    {name:'Nechryael',              page:'Nechryael',                    combat:115, weakness:'Slash',        slaylvl:'80', location:'Slayer Tower',            members:'yes', aggressive:'no',  poisonous:'no',  lifepoints:5600,  experience:2240},
+    {name:'Spiritual Warrior',      page:'Spiritual_warrior',            combat:115, weakness:'Slash',        slaylvl:'68', location:'God Wars Dungeon',        members:'yes', aggressive:'yes', poisonous:'no',  lifepoints:6000,  experience:2400},
+    {name:'Spiritual Ranger',       page:'Spiritual_ranger',             combat:115, weakness:'Slash',        slaylvl:'63', location:'God Wars Dungeon',        members:'yes', aggressive:'yes', poisonous:'no',  lifepoints:5500,  experience:2200},
+    {name:'Spiritual Mage',         page:'Spiritual_mage',               combat:121, weakness:'Arrows',       slaylvl:'83', location:'God Wars Dungeon',        members:'yes', aggressive:'yes', poisonous:'no',  lifepoints:6000,  experience:2400},
+    {name:'Hellhound',              page:'Hellhound',                    combat:122, weakness:'Water spells', slaylvl:'',   location:'Taverley Dungeon',        members:'yes', aggressive:'yes', poisonous:'no',  lifepoints:6500,  experience:2600},
+    {name:'Skeletal Wyvern',        page:'Skeletal_Wyvern',              combat:140, weakness:'Fire spells',  slaylvl:'72', location:'Asgarnian Ice Dungeon',   members:'yes', aggressive:'yes', poisonous:'no',  lifepoints:8000,  experience:3200},
+    {name:'Kalphite Guardian',      page:'Kalphite_Guardian',            combat:141, weakness:'Magic',        slaylvl:'',   location:'Kalphite Cave',           members:'yes', aggressive:'yes', poisonous:'yes', lifepoints:8500,  experience:3400},
+    {name:'Exiled Kalphite Marauder',page:'Exiled_Kalphite_Marauder',   combat:147, weakness:'Magic',        slaylvl:'',   location:'Exiled Kalphite Hive',    members:'yes', aggressive:'yes', poisonous:'yes', lifepoints:9000,  experience:3600},
+    {name:'Red Dragon',             page:'Red_dragon',                   combat:152, weakness:'Slash',        slaylvl:'',   location:'Brimhaven Dungeon',       members:'yes', aggressive:'yes', poisonous:'no',  lifepoints:7500,  experience:3000},
+    {name:'Black Demon',            page:'Black_Demon',                  combat:172, weakness:'Water spells', slaylvl:'',   location:'Taverley Dungeon',        members:'yes', aggressive:'yes', poisonous:'no',  lifepoints:8000,  experience:3200},
+    {name:'Black Dragon',           page:'Black_dragon',                 combat:200, weakness:'Slash',        slaylvl:'',   location:'Taverley Dungeon',        members:'yes', aggressive:'yes', poisonous:'no',  lifepoints:8500,  experience:3400},
+    {name:'Kalphite Queen',         page:'Kalphite_Queen',               combat:333, weakness:'Magic',        slaylvl:'',   location:'Kalphite Lair',           members:'yes', aggressive:'yes', poisonous:'yes', lifepoints:35000, experience:14000}
+  ];
 
-    var where = 'Monsters.combat>=' + minLvl + ' AND Monsters.combat<=' + maxLvl;
-
-    var params = new URLSearchParams({
-      action: 'cargoquery',
-      format: 'json',
-      origin: '*',
-      tables: 'Monsters',
-      fields: fields,
-      where: where,
-      limit: '500',
-      offset: '0'
-    });
-
-    var url = 'https://runescape.wiki/api.php?' + params.toString();
-
-    return fetch(url).then(function(res) {
-      if (!res.ok) throw new Error('HTTP ' + res.status);
-      return res.json();
-    }).then(function(data) {
-      if (data.error) throw new Error(data.error.info || JSON.stringify(data.error));
-      var rows = data.cargoquery || [];
-      return parseCargoResults(rows);
-    });
-  }
-
-  function parseCargoResults(rows) {
-    var monsters = [];
-    rows.forEach(function(row) {
-      var r = row.title || {};
-      monsters.push({
-        name:       r.name || (r.page || '').replace(/_/g, ' '),
-        page:       r.page || '',
-        combat:     r.combat || '',
-        weakness:   r.weakness || '',
-        slaylvl:    r.slaylvl || '',
-        location:   r.location || '',
-        members:    r.members || '',
-        aggressive: r.aggressive || '',
-        poisonous:  r.poisonous || '',
-        lifepoints: r.lifepoints || '',
-        experience: r.experience || ''
-      });
-    });
-    monsters.sort(function(a, b) {
-      return (parseInt(a.combat) || 0) - (parseInt(b.combat) || 0);
-    });
-    return monsters;
+  function filterMonsters(minLvl, maxLvl) {
+    return Promise.resolve(
+      MONSTERS
+        .filter(function(m) { return m.combat >= minLvl && m.combat <= maxLvl; })
+        .sort(function(a, b) { return a.combat - b.combat; })
+    );
   }
 
   function renderResults(raw) {
@@ -353,7 +365,7 @@
     }
 
     var shown = monsters.slice(0, 100);
-    setStatus(monsters.length + ' monster' + (monsters.length !== 1 ? 's' : '') + ' found — live data from runescape.wiki', true);
+    setStatus(monsters.length + ' monster' + (monsters.length !== 1 ? 's' : '') + ' found', true);
 
     div.innerHTML = '<p class="results-header">Showing ' + shown.length + ' of ' + monsters.length + ' monsters, sorted by combat level</p>' +
       shown.map(function(m) {
