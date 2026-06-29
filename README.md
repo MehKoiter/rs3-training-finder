@@ -1,49 +1,39 @@
-# rs3-training-finder
-A lightweight web app that queries the RS3 Wiki live to find monsters suited to your combat level and training style. Filter by melee, ranged, or magic weakness, membership status, and enemy combat level range.
-
 # RS3 Training Spot Finder
 
-A lightweight web app that queries the RS3 Wiki live to find monsters suited to your combat level and training style. Filter by melee, ranged, or magic weakness, membership status, and enemy combat level range.
+A lightweight single-file web app for finding RuneScape 3 training spots. Filter monsters by combat level range, combat style weakness, and members/F2P status.
 
-**[Live demo →](https://yourusername.github.io/rs3-training-finder)**
+**[Live demo →](https://mehkoiter.github.io/rs3-training-finder)**
 
 ---
 
 ## Features
 
-- Live data pulled directly from the [RS3 Wiki](https://runescape.wiki) Cargo API — always up to date
-- Filter monsters by combat level range, combat style weakness, and members/F2P status
-- Shows combat level, HP, XP per kill, weakness, location, aggression, poison, and Slayer requirements
+- Filter monsters by combat level range, combat style weakness (melee/ranged/magic), and members/F2P status
+- Shows combat level, life points, XP per kill, weakness, location, aggression, poison, and Slayer requirements
 - Every result links to the monster's full wiki page
-- Dark mode support
+- RS3-themed dark gold UI with Cinzel serif headings
 - No backend, no dependencies, no build step — a single HTML file
 
 ## Usage
 
-Enter your combat stats, choose your preferred combat style and any filters, then hit **Search the wiki**. Results are sorted by enemy combat level ascending.
+Enter your combat stats, choose your preferred combat style and any filters, then hit **Find Training Spots**. Results are sorted by enemy combat level ascending.
 
-The style filter works by matching against the monster's weakness — selecting "Melee" will show monsters weak to slash, stab, or crush attacks.
+The style filter matches against each monster's weakness — selecting "Melee" shows monsters weak to slash, stab, or crush; "Ranged" shows those weak to arrows or bolts; "Magic" shows those weak to elemental spells.
 
 ## How it works
 
-The app queries the `Monsters` Cargo table on the RS3 Wiki's MediaWiki API:
+The app uses an embedded dataset of 68 common RS3 training monsters covering F2P and members content from combat level 1 to 333. All filtering happens client-side with no API calls.
 
-```
-https://runescape.wiki/api.php?action=cargoquery&tables=Monsters&...
-```
-
-The wiki supports CORS, so the query runs directly from the browser with no backend required. Up to 500 monsters are fetched per search, deduplicated by name, and filtered client-side by weakness type.
+XP per kill values are approximate (roughly 40% of life points, representing the primary combat stat per kill).
 
 ## Hosting
 
-This is a single `index.html` file — host it anywhere that serves static files:
+Drop `index.html` anywhere that serves static files:
 
-- **GitHub Pages** — upload to a repo and enable Pages in Settings
+- **GitHub Pages** — enable Pages in the repo Settings under Pages → Source
 - **Netlify** — drag and drop the file at [netlify.com](https://netlify.com)
 - **Vercel** — import the repo or drop the file
 
 ## Credits
 
-Monster data sourced from [runescape.wiki](https://runescape.wiki) under [CC BY-NC-SA 3.0](https://creativecommons.org/licenses/by-nc-sa/3.0/).
-
-Not affiliated with Jagex.
+Monster data derived from [runescape.wiki](https://runescape.wiki). Not affiliated with Jagex.
