@@ -257,8 +257,8 @@
       });
     });
   }
-  bindGroup('style-group',   function(v) { combatStyle   = v; });
-  bindGroup('members-group', function(v) { membersFilter = v; });
+  bindGroup('style-group',   function(v) { combatStyle   = v; saveState(); });
+  bindGroup('members-group', function(v) { membersFilter = v; saveState(); });
 
   var WEAKNESS_STYLES = {
     slash: 'melee', stab: 'melee', crush: 'melee',
@@ -477,6 +477,57 @@
         '</div>';
       }).join('');
   }
+
+  var STORAGE_KEY = 'rs3finder_v1';
+
+  function saveState() {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({
+        combat: document.getElementById('combat').value,
+        atk:    document.getElementById('atk').value,
+        str:    document.getElementById('str').value,
+        def:    document.getElementById('def').value,
+        hp:     document.getElementById('hp').value,
+        pray:   document.getElementById('pray').value,
+        ranged: document.getElementById('ranged').value,
+        magic:  document.getElementById('magic').value,
+        minlvl: document.getElementById('minlvl').value,
+        maxlvl: document.getElementById('maxlvl').value,
+        combatStyle:   combatStyle,
+        membersFilter: membersFilter
+      }));
+    } catch(e) {}
+  }
+
+  function loadState() {
+    try {
+      var raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return;
+      var s = JSON.parse(raw);
+      ['combat','atk','str','def','hp','pray','ranged','magic','minlvl','maxlvl'].forEach(function(id) {
+        if (s[id] !== undefined) document.getElementById(id).value = s[id];
+      });
+      if (s.combatStyle) {
+        combatStyle = s.combatStyle;
+        document.getElementById('style-group').querySelectorAll('.btn-toggle').forEach(function(b) {
+          b.classList.toggle('active', b.dataset.val === s.combatStyle);
+        });
+      }
+      if (s.membersFilter) {
+        membersFilter = s.membersFilter;
+        document.getElementById('members-group').querySelectorAll('.btn-toggle').forEach(function(b) {
+          b.classList.toggle('active', b.dataset.val === s.membersFilter);
+        });
+      }
+      setStatus('Welcome back — your last settings have been restored', false);
+    } catch(e) {}
+  }
+
+  ['combat','atk','str','def','hp','pray','ranged','magic','minlvl','maxlvl'].forEach(function(id) {
+    document.getElementById(id).addEventListener('input', saveState);
+  });
+
+  loadState();
 </script>
 </body>
 </html>
