@@ -91,17 +91,34 @@
       .monster-img { display: none; }
     }
     .field label { display: block; font-size: 11px; color: var(--text-secondary); font-weight: 500; margin-bottom: 5px; letter-spacing: .03em; }
-    input[type=number], select {
+    input[type=number], input[type=text], select {
       width: 100%; height: 38px; padding: 0 10px;
       border-radius: var(--radius); border: 1px solid var(--border-strong);
       background: #0e1116; color: var(--text);
       font-size: 14px; font-family: inherit;
       transition: border-color .15s, box-shadow .15s; -webkit-appearance: none; appearance: none;
     }
-    input[type=number]:focus, select:focus {
+    input[type=number]:focus, input[type=text]:focus, select:focus {
       outline: none; border-color: var(--accent);
       box-shadow: 0 0 0 2px rgba(200,168,64,.18);
     }
+    input[type=text]::placeholder { color: var(--text-muted); }
+    .btn-suggest {
+      width: 100%; margin-top: .75rem; padding: 7px 14px;
+      border-radius: var(--radius); border: 1px solid var(--border-strong);
+      background: transparent; color: var(--text-secondary);
+      font-size: 12px; font-family: inherit; cursor: pointer; letter-spacing: .02em;
+      transition: all .15s;
+    }
+    .btn-suggest:hover { border-color: var(--accent); color: var(--accent-text); }
+    .copy-link-btn {
+      margin-left: auto; padding: 3px 10px; border-radius: 20px;
+      border: 1px solid var(--border-strong); background: transparent;
+      color: var(--text-muted); font-size: 11px; font-family: inherit;
+      cursor: pointer; transition: all .15s; flex-shrink: 0;
+      display: flex; align-items: center; gap: 4px;
+    }
+    .copy-link-btn:hover { border-color: var(--accent); color: var(--accent-text); }
     .divider { height: 1px; background: linear-gradient(90deg, transparent, var(--border-strong), transparent); margin: 1rem 0; }
     .btn-group { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
     .btn-toggle {
@@ -233,10 +250,25 @@
         <button class="btn-toggle" data-val="f2p">F2P only</button>
       </div>
     </div>
-    <div class="grid2">
-      <div class="field"><label>Enemy combat level — min</label><input type="number" id="minlvl" value="1" min="1" max="10000"></div>
-      <div class="field"><label>Enemy combat level — max</label><input type="number" id="maxlvl" value="200" min="1" max="10000"></div>
+    <div style="margin-bottom:1rem">
+      <div class="field"><label>Search by name</label><input type="text" id="name-filter" placeholder="e.g. dragon, demon…" autocomplete="off"></div>
     </div>
+    <div class="grid2" style="margin-bottom:1rem">
+      <div class="field"><label>Enemy level — min</label><input type="number" id="minlvl" value="1" min="1" max="10000"></div>
+      <div class="field"><label>Enemy level — max</label><input type="number" id="maxlvl" value="200" min="1" max="10000"></div>
+    </div>
+    <div class="grid2">
+      <div class="field"><label>Your Slayer level</label><input type="number" id="slayer" value="99" min="1" max="120"></div>
+      <div class="field"><label>Sort by</label>
+        <select id="sort-select">
+          <option value="combat">Combat level ↑</option>
+          <option value="xp">XP / kill ↓</option>
+          <option value="hp">Life points ↓</option>
+          <option value="name">Name A–Z</option>
+        </select>
+      </div>
+    </div>
+    <button class="btn-suggest" onclick="suggestLevelRange()">&#9876; Suggest level range for my combat level</button>
   </div>
 
   <button class="find-btn" id="find-btn" onclick="findEnemies()">
@@ -247,6 +279,9 @@
   <div class="status-bar">
     <div class="status-dot" id="status-dot"></div>
     <span id="status-text">Enter your stats and press search</span>
+    <button class="copy-link-btn" id="copy-link-btn" onclick="copyLink()" style="display:none">
+      <i class="ti ti-link" style="font-size:12px"></i> Copy link
+    </button>
   </div>
 
   <div id="results"></div>
@@ -321,6 +356,8 @@
     setLoading(true);
     setStatus('Searching...', false);
     document.getElementById('results').innerHTML = '';
+    document.getElementById('copy-link-btn').style.display = 'none';
+    updateUrl();
 
     filterMonsters(minLvl, maxLvl).then(function(monsters) {
       renderResults(monsters);
@@ -405,15 +442,19 @@
 
   function filterMonsters(minLvl, maxLvl) {
     return Promise.resolve(
-      MONSTERS
-        .filter(function(m) { return m.combat >= minLvl && m.combat <= maxLvl; })
-        .sort(function(a, b) { return a.combat - b.combat; })
+      MONSTERS.filter(function(m) { return m.combat >= minLvl && m.combat <= maxLvl; })
     );
   }
 
   function renderResults(raw) {
+    // Filter by name
+    var nameQ = (document.getElementById('name-filter').value || '').toLowerCase().trim();
+    var monsters = nameQ
+      ? raw.filter(function(m) { return (m.name || '').toLowerCase().indexOf(nameQ) !== -1; })
+      : raw.slice();
+
     // Filter by style preference
-    var monsters = raw.filter(function(m) {
+    monsters = monsters.filter(function(m) {
       return styleMatchesWeakness(m.weakness, combatStyle);
     });
 
@@ -430,6 +471,12 @@
       });
     }
 
+    // Filter by slayer level
+    var slayerLvl = parseInt(document.getElementById('slayer').value) || 99;
+    monsters = monsters.filter(function(m) {
+      return (parseInt(m.slaylvl) || 0) <= slayerLvl;
+    });
+
     // Dedupe by name
     var seen = {};
     monsters = monsters.filter(function(m) {
@@ -439,6 +486,16 @@
       return true;
     });
 
+    // Sort
+    var sort = document.getElementById('sort-select').value;
+    monsters.sort(function(a, b) {
+      if (sort === 'xp')   return (parseFloat(b.experience) || 0) - (parseFloat(a.experience) || 0);
+      if (sort === 'hp')   return (parseInt(b.lifepoints)   || 0) - (parseInt(a.lifepoints)   || 0);
+      if (sort === 'name') return (a.name || '').localeCompare(b.name || '');
+      return (parseInt(a.combat) || 0) - (parseInt(b.combat) || 0);
+    });
+
+    var sortLabels = { combat: 'combat level', xp: 'XP / kill', hp: 'life points', name: 'name' };
     var div = document.getElementById('results');
 
     if (monsters.length === 0) {
@@ -449,8 +506,9 @@
 
     var shown = monsters.slice(0, 100);
     setStatus(monsters.length + ' monster' + (monsters.length !== 1 ? 's' : '') + ' found', true);
+    document.getElementById('copy-link-btn').style.display = 'flex';
 
-    div.innerHTML = '<p class="results-header">Showing ' + shown.length + ' of ' + monsters.length + ' monsters, sorted by combat level</p>' +
+    div.innerHTML = '<p class="results-header">Showing ' + shown.length + ' of ' + monsters.length + ' monsters, sorted by ' + (sortLabels[sort] || 'combat level') + '</p>' +
       shown.map(function(m) {
         var name    = m.name || 'Unknown';
         var page    = m.page || name;
@@ -510,6 +568,9 @@
         magic:  document.getElementById('magic').value,
         minlvl: document.getElementById('minlvl').value,
         maxlvl: document.getElementById('maxlvl').value,
+        slayer: document.getElementById('slayer').value,
+        name:   document.getElementById('name-filter').value,
+        sort:   document.getElementById('sort-select').value,
         combatStyle:   combatStyle,
         membersFilter: membersFilter
       }));
@@ -519,11 +580,13 @@
   function loadState() {
     try {
       var raw = localStorage.getItem(STORAGE_KEY);
-      if (!raw) return;
+      if (!raw) return false;
       var s = JSON.parse(raw);
-      ['combat','atk','str','def','hp','pray','ranged','magic','minlvl','maxlvl'].forEach(function(id) {
+      ['combat','atk','str','def','hp','pray','ranged','magic','minlvl','maxlvl','slayer'].forEach(function(id) {
         if (s[id] !== undefined) document.getElementById(id).value = s[id];
       });
+      if (s.name !== undefined) document.getElementById('name-filter').value = s.name;
+      if (s.sort !== undefined) document.getElementById('sort-select').value = s.sort;
       if (s.combatStyle) {
         combatStyle = s.combatStyle;
         document.getElementById('style-group').querySelectorAll('.btn-toggle').forEach(function(b) {
@@ -536,15 +599,89 @@
           b.classList.toggle('active', b.dataset.val === s.membersFilter);
         });
       }
-      setStatus('Welcome back — your last settings have been restored', false);
-    } catch(e) {}
+      return true;
+    } catch(e) { return false; }
   }
 
-  ['combat','atk','str','def','hp','pray','ranged','magic','minlvl','maxlvl'].forEach(function(id) {
+  ['combat','atk','str','def','hp','pray','ranged','magic','minlvl','maxlvl','slayer'].forEach(function(id) {
     document.getElementById(id).addEventListener('input', saveState);
   });
+  document.getElementById('name-filter').addEventListener('input', saveState);
+  document.getElementById('sort-select').addEventListener('change', saveState);
 
-  loadState();
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter' && !document.getElementById('find-btn').disabled) findEnemies();
+  });
+
+  function suggestLevelRange() {
+    var lvl = parseInt(document.getElementById('combat').value) || 50;
+    document.getElementById('minlvl').value = Math.max(1, Math.floor(lvl * 0.5));
+    document.getElementById('maxlvl').value = Math.min(10000, Math.ceil(lvl * 1.1));
+    saveState();
+  }
+
+  function updateUrl() {
+    var params = new URLSearchParams();
+    params.set('minlvl', document.getElementById('minlvl').value);
+    params.set('maxlvl', document.getElementById('maxlvl').value);
+    if (combatStyle   !== 'any') params.set('style',   combatStyle);
+    if (membersFilter !== 'any') params.set('members', membersFilter);
+    var sort = document.getElementById('sort-select').value;
+    if (sort !== 'combat') params.set('sort', sort);
+    var slayer = parseInt(document.getElementById('slayer').value);
+    if (slayer && slayer < 99) params.set('slayer', slayer);
+    var name = document.getElementById('name-filter').value.trim();
+    if (name) params.set('name', name);
+    history.replaceState(null, '', '?' + params.toString());
+  }
+
+  function copyLink() {
+    var url = window.location.href;
+    var btn = document.getElementById('copy-link-btn');
+    function flash() {
+      var orig = btn.innerHTML;
+      btn.innerHTML = '<i class="ti ti-check" style="font-size:12px"></i> Copied!';
+      setTimeout(function() { btn.innerHTML = orig; }, 2000);
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(url).then(flash).catch(function() {
+        var ta = document.createElement('textarea');
+        ta.value = url; document.body.appendChild(ta); ta.select();
+        document.execCommand('copy'); document.body.removeChild(ta); flash();
+      });
+    } else {
+      var ta = document.createElement('textarea');
+      ta.value = url; document.body.appendChild(ta); ta.select();
+      document.execCommand('copy'); document.body.removeChild(ta); flash();
+    }
+  }
+
+  function applyUrlParams() {
+    var params = new URLSearchParams(window.location.search);
+    if (!params.toString()) return false;
+    if (params.get('minlvl')) document.getElementById('minlvl').value = params.get('minlvl');
+    if (params.get('maxlvl')) document.getElementById('maxlvl').value = params.get('maxlvl');
+    if (params.get('slayer')) document.getElementById('slayer').value = params.get('slayer');
+    if (params.get('name'))   document.getElementById('name-filter').value = params.get('name');
+    if (params.get('sort'))   document.getElementById('sort-select').value = params.get('sort');
+    if (params.get('style')) {
+      combatStyle = params.get('style');
+      document.getElementById('style-group').querySelectorAll('.btn-toggle').forEach(function(b) {
+        b.classList.toggle('active', b.dataset.val === combatStyle);
+      });
+    }
+    if (params.get('members')) {
+      membersFilter = params.get('members');
+      document.getElementById('members-group').querySelectorAll('.btn-toggle').forEach(function(b) {
+        b.classList.toggle('active', b.dataset.val === membersFilter);
+      });
+    }
+    return true;
+  }
+
+  var hasUrlParams = applyUrlParams();
+  if (!hasUrlParams) loadState();
+  if (hasUrlParams || localStorage.getItem(STORAGE_KEY)) findEnemies();
 </script>
 </body>
 </html>
