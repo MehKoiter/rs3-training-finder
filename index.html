@@ -150,6 +150,24 @@
     .find-btn:hover { filter: brightness(1.12); }
     .find-btn:active { transform: scale(.99); filter: brightness(.93); }
     .find-btn:disabled { opacity: .4; cursor: not-allowed; transform: none; filter: none; }
+    .btn-reset {
+      width: 100%; height: 38px; border-radius: var(--radius);
+      border: 1px solid var(--border-strong); background: transparent;
+      color: var(--text-secondary); font-size: 13px; font-family: inherit;
+      cursor: pointer; margin-top: .4rem;
+      transition: all .15s; display: flex; align-items: center; justify-content: center; gap: 6px;
+    }
+    .btn-reset:hover { border-color: var(--accent); color: var(--accent-text); }
+    .sort-dir-btn {
+      padding: 0 10px; height: 100%; border-radius: 0 var(--radius) var(--radius) 0;
+      border: 1px solid var(--border-strong); border-left: none;
+      background: #0e1116; color: var(--text-secondary);
+      font-size: 13px; font-family: inherit; cursor: pointer;
+      transition: all .15s; flex-shrink: 0; white-space: nowrap;
+    }
+    .sort-dir-btn:hover { border-color: var(--accent); color: var(--accent-text); }
+    .sort-with-dir { display: flex; }
+    .sort-with-dir select { border-radius: var(--radius) 0 0 var(--radius); flex: 1; min-width: 0; }
     .spinner { width: 16px; height: 16px; border: 2px solid rgba(255,248,232,.3); border-top-color: #fff8e8; border-radius: 50%; animation: spin .7s linear infinite; display: none; }
     @keyframes spin { to { transform: rotate(360deg); } }
     .status-bar { font-size: 12px; color: var(--text-muted); padding: .5rem 0; display: flex; align-items: center; gap: 6px; min-height: 28px; }
@@ -257,15 +275,32 @@
       <div class="field"><label>Enemy level — min</label><input type="number" id="minlvl" value="1" min="1" max="10000"></div>
       <div class="field"><label>Enemy level — max</label><input type="number" id="maxlvl" value="200" min="1" max="10000"></div>
     </div>
+    <div style="margin-bottom:1rem">
+      <div class="field" style="margin-bottom:6px"><label>Aggressiveness</label></div>
+      <div class="btn-group" id="aggro-group">
+        <button class="btn-toggle active" data-val="any">Any</button>
+        <button class="btn-toggle" data-val="yes">&#128296; Aggressive only</button>
+      </div>
+    </div>
+    <div style="margin-bottom:1rem">
+      <div class="field" style="margin-bottom:6px"><label>Poisonous monsters</label></div>
+      <div class="btn-group" id="poison-group">
+        <button class="btn-toggle active" data-val="any">Show all</button>
+        <button class="btn-toggle" data-val="hide">Hide poisonous</button>
+      </div>
+    </div>
     <div class="grid2">
       <div class="field"><label>Your Slayer level</label><input type="number" id="slayer" value="99" min="1" max="120"></div>
       <div class="field"><label>Sort by</label>
-        <select id="sort-select">
-          <option value="combat">Combat level ↑</option>
-          <option value="xp">XP / kill ↓</option>
-          <option value="hp">Life points ↓</option>
-          <option value="name">Name A–Z</option>
-        </select>
+        <div class="sort-with-dir">
+          <select id="sort-select">
+            <option value="combat">Combat level</option>
+            <option value="xp">XP / kill</option>
+            <option value="hp">Life points</option>
+            <option value="name">Name</option>
+          </select>
+          <button class="sort-dir-btn" id="sort-dir-btn" title="Toggle sort direction" onclick="toggleSortDir()">&#9650;</button>
+        </div>
       </div>
     </div>
     <button class="btn-suggest" onclick="suggestLevelRange()">&#9876; Suggest level range for my combat level</button>
@@ -275,6 +310,7 @@
     <span class="spinner" id="spinner"></span>
     <span id="btn-label">Find training spots</span>
   </button>
+  <button class="btn-reset" onclick="resetFilters()"><i class="ti ti-refresh" style="font-size:14px"></i> Reset all filters</button>
 
   <div class="status-bar">
     <div class="status-dot" id="status-dot"></div>
@@ -293,7 +329,7 @@
 </div>
 
 <script>
-  var combatStyle = 'any', membersFilter = 'any';
+  var combatStyle = 'any', membersFilter = 'any', aggressiveFilter = 'any', poisonFilter = 'any', sortDir = 'asc';
 
   function bindGroup(groupId, setter) {
     var btns = document.getElementById(groupId).querySelectorAll('.btn-toggle');
@@ -305,8 +341,16 @@
       });
     });
   }
-  bindGroup('style-group',   function(v) { combatStyle   = v; saveState(); });
-  bindGroup('members-group', function(v) { membersFilter = v; saveState(); });
+  bindGroup('style-group',   function(v) { combatStyle      = v; saveState(); });
+  bindGroup('members-group', function(v) { membersFilter    = v; saveState(); });
+  bindGroup('aggro-group',   function(v) { aggressiveFilter = v; saveState(); });
+  bindGroup('poison-group',  function(v) { poisonFilter     = v; saveState(); });
+
+  function toggleSortDir() {
+    sortDir = sortDir === 'asc' ? 'desc' : 'asc';
+    document.getElementById('sort-dir-btn').innerHTML = sortDir === 'asc' ? '&#9650;' : '&#9660;';
+    saveState();
+  }
 
   var WEAKNESS_STYLES = {
     slash: 'melee', stab: 'melee', crush: 'melee',
@@ -477,6 +521,22 @@
       return (parseInt(m.slaylvl) || 0) <= slayerLvl;
     });
 
+    // Filter by aggressiveness
+    if (aggressiveFilter === 'yes') {
+      monsters = monsters.filter(function(m) {
+        var v = (m.aggressive || '').toLowerCase();
+        return v === 'yes' || v === 'true' || v === '1';
+      });
+    }
+
+    // Filter by poisonous
+    if (poisonFilter === 'hide') {
+      monsters = monsters.filter(function(m) {
+        var v = (m.poisonous || '').toLowerCase();
+        return v !== 'yes' && v !== 'true' && v !== '1';
+      });
+    }
+
     // Dedupe by name
     var seen = {};
     monsters = monsters.filter(function(m) {
@@ -488,11 +548,14 @@
 
     // Sort
     var sort = document.getElementById('sort-select').value;
+    var dir = sortDir === 'desc' ? -1 : 1;
     monsters.sort(function(a, b) {
-      if (sort === 'xp')   return (parseFloat(b.experience) || 0) - (parseFloat(a.experience) || 0);
-      if (sort === 'hp')   return (parseInt(b.lifepoints)   || 0) - (parseInt(a.lifepoints)   || 0);
-      if (sort === 'name') return (a.name || '').localeCompare(b.name || '');
-      return (parseInt(a.combat) || 0) - (parseInt(b.combat) || 0);
+      var r;
+      if (sort === 'xp')   r = (parseFloat(a.experience) || 0) - (parseFloat(b.experience) || 0);
+      else if (sort === 'hp')   r = (parseInt(a.lifepoints)   || 0) - (parseInt(b.lifepoints)   || 0);
+      else if (sort === 'name') r = (a.name || '').localeCompare(b.name || '');
+      else                      r = (parseInt(a.combat) || 0) - (parseInt(b.combat) || 0);
+      return r * dir;
     });
 
     var sortLabels = { combat: 'combat level', xp: 'XP / kill', hp: 'life points', name: 'name' };
@@ -517,7 +580,7 @@
         var hp      = m.lifepoints ? Number(m.lifepoints).toLocaleString() : '?';
         var rawXp   = parseFloat(m.experience);
         var xp      = isNaN(rawXp) ? '?' : rawXp.toFixed(1);
-        var loc     = (m.location || 'Unknown location').split(',')[0].trim();
+        var locs    = (m.location || 'Unknown location').split(',').map(function(l) { return l.trim(); }).filter(Boolean);
         var slayLvl = m.slaylvl && m.slaylvl !== '0' ? m.slaylvl : null;
 
         var isMember = (m.members || '').toLowerCase();
@@ -540,7 +603,7 @@
           '<div class="monster-img"><img src="' + imgUrl + '" alt="" loading="lazy" onerror="this.parentElement.style.display=\'none\'"></div>' +
           '<div>' +
             '<div class="enemy-name"><a href="' + wikiUrl + '" target="_blank" rel="noopener">' + name + ' <i class="ti ti-external-link" style="font-size:11px;opacity:.45" aria-hidden="true"></i></a></div>' +
-            '<div class="enemy-meta"><i class="ti ti-map-pin" style="font-size:12px;vertical-align:-1px" aria-hidden="true"></i> <a href="https://runescape.wiki/w/' + encodeURIComponent(loc.replace(/ /g, '_')) + '" target="_blank" rel="noopener" class="loc-link">' + loc + '</a></div>' +
+            '<div class="enemy-meta"><i class="ti ti-map-pin" style="font-size:12px;vertical-align:-1px" aria-hidden="true"></i> ' + locs.map(function(l) { return '<a href="https://runescape.wiki/w/' + encodeURIComponent(l.replace(/ /g, '_')) + '" target="_blank" rel="noopener" class="loc-link">' + l + '</a>'; }).join('<span style="color:var(--text-muted)"> · </span>') + '</div>' +
             '<div class="tags">' + tagHtml + '</div>' +
           '</div>' +
           '<div class="stat-col">' +
@@ -571,8 +634,11 @@
         slayer: document.getElementById('slayer').value,
         name:   document.getElementById('name-filter').value,
         sort:   document.getElementById('sort-select').value,
-        combatStyle:   combatStyle,
-        membersFilter: membersFilter
+        combatStyle:      combatStyle,
+        membersFilter:    membersFilter,
+        aggressiveFilter: aggressiveFilter,
+        poisonFilter:     poisonFilter,
+        sortDir:          sortDir
       }));
     } catch(e) {}
   }
@@ -599,6 +665,22 @@
           b.classList.toggle('active', b.dataset.val === s.membersFilter);
         });
       }
+      if (s.aggressiveFilter) {
+        aggressiveFilter = s.aggressiveFilter;
+        document.getElementById('aggro-group').querySelectorAll('.btn-toggle').forEach(function(b) {
+          b.classList.toggle('active', b.dataset.val === s.aggressiveFilter);
+        });
+      }
+      if (s.poisonFilter) {
+        poisonFilter = s.poisonFilter;
+        document.getElementById('poison-group').querySelectorAll('.btn-toggle').forEach(function(b) {
+          b.classList.toggle('active', b.dataset.val === s.poisonFilter);
+        });
+      }
+      if (s.sortDir) {
+        sortDir = s.sortDir;
+        document.getElementById('sort-dir-btn').innerHTML = sortDir === 'asc' ? '&#9650;' : '&#9660;';
+      }
       return true;
     } catch(e) { return false; }
   }
@@ -619,6 +701,26 @@
     if (e.key === 'Enter' && !document.getElementById('find-btn').disabled) findEnemies();
   });
 
+  function resetFilters() {
+    document.getElementById('minlvl').value = 1;
+    document.getElementById('maxlvl').value = 200;
+    document.getElementById('slayer').value = 99;
+    document.getElementById('name-filter').value = '';
+    document.getElementById('sort-select').value = 'combat';
+    combatStyle = 'any';
+    membersFilter = 'any';
+    aggressiveFilter = 'any';
+    poisonFilter = 'any';
+    sortDir = 'asc';
+    document.getElementById('sort-dir-btn').innerHTML = '&#9650;';
+    ['style-group','members-group','aggro-group','poison-group'].forEach(function(gid) {
+      var btns = document.getElementById(gid).querySelectorAll('.btn-toggle');
+      btns.forEach(function(b) { b.classList.toggle('active', b.dataset.val === 'any'); });
+    });
+    localStorage.removeItem(STORAGE_KEY);
+    findEnemies();
+  }
+
   function suggestLevelRange() {
     var lvl = parseInt(document.getElementById('combat').value) || 50;
     document.getElementById('minlvl').value = Math.max(1, Math.floor(lvl * 0.5));
@@ -630,8 +732,11 @@
     var params = new URLSearchParams();
     params.set('minlvl', document.getElementById('minlvl').value);
     params.set('maxlvl', document.getElementById('maxlvl').value);
-    if (combatStyle   !== 'any') params.set('style',   combatStyle);
-    if (membersFilter !== 'any') params.set('members', membersFilter);
+    if (combatStyle      !== 'any')  params.set('style',   combatStyle);
+    if (membersFilter    !== 'any')  params.set('members', membersFilter);
+    if (aggressiveFilter !== 'any')  params.set('aggro',   aggressiveFilter);
+    if (poisonFilter     !== 'any')  params.set('poison',  poisonFilter);
+    if (sortDir          !== 'asc')  params.set('dir',     sortDir);
     var sort = document.getElementById('sort-select').value;
     if (sort !== 'combat') params.set('sort', sort);
     var slayer = parseInt(document.getElementById('slayer').value);
@@ -681,6 +786,22 @@
       document.getElementById('members-group').querySelectorAll('.btn-toggle').forEach(function(b) {
         b.classList.toggle('active', b.dataset.val === membersFilter);
       });
+    }
+    if (params.get('aggro')) {
+      aggressiveFilter = params.get('aggro');
+      document.getElementById('aggro-group').querySelectorAll('.btn-toggle').forEach(function(b) {
+        b.classList.toggle('active', b.dataset.val === aggressiveFilter);
+      });
+    }
+    if (params.get('poison')) {
+      poisonFilter = params.get('poison');
+      document.getElementById('poison-group').querySelectorAll('.btn-toggle').forEach(function(b) {
+        b.classList.toggle('active', b.dataset.val === poisonFilter);
+      });
+    }
+    if (params.get('dir')) {
+      sortDir = params.get('dir');
+      document.getElementById('sort-dir-btn').innerHTML = sortDir === 'asc' ? '&#9650;' : '&#9660;';
     }
     return true;
   }
